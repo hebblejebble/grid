@@ -1,0 +1,10 @@
+import numpy as np
+
+class Grid(np.ndarray):
+	def __new__(cls, arr):
+		return np.asarray(arr).view(cls)
+	
+	def full_match(self, arr):
+		shape_bool = (self.shape == arr.shape)
+		value_bool = (self == arr).all()
+		return (shape_bool and value_bool)
