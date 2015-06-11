@@ -4,7 +4,13 @@ class Grid(np.ndarray):
 	def __new__(cls, arr):
 		return np.asarray(arr).view(cls)
 	
-	def full_match(self, arr):
-		shape_bool = (self.shape == arr.shape)
-		value_bool = (self == arr).all()
-		return (shape_bool and value_bool)
+	def match(self, arr):
+		if (self.shape != arr.shape): return False
+		return (self == arr).all()
+	
+	def __getitem__(self, i):
+		if type(i) == type(0.5): print 'ping'
+		return super(Grid, self).__getitem__(i)
+	
+	def __getslice__(self, i, j):
+		return super(Grid, self).__getslice__(i, j)
