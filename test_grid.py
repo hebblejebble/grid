@@ -59,9 +59,29 @@ class TestGrid1D(unittest.TestCase):
 		gslice = self.g[1.0:-1.0]
 		self.assertTrue( gslice.match(aslice) )
 	
-	def test_edges(self):
+	def test_default_edges(self):
 		edges = [[i-.5 for i in range( len(self.g)+1)]]
-		self.assertTrue( self.g.edges == edges )
+		self.assertTrue( self.g.get_edges() == edges )
+	
+	def test_manual_edges(self):
+		man_g = Grid(np.array([1,2,3]), edges=[1.0,-1.0,-3.0,-5.0])
+		self.assertTrue( man_g.get_edges() == [[1.0,-1.0,-3.0,-5.0]] )
+	
+	def test_wrong_size_edges(self):
+		create_fail = False
+		try:
+			man_g = Grid(np.array([1,2,3]), edges=[-1.0,1.0,3.0])
+		except:
+			create_fail = True
+		self.assertTrue( create_fail )
+	
+	def test_not_monotonic_edges(self):
+		create_fail = False
+		try:
+			man_g = Grid(np.array([1,2,3]), edges=[1.0,-1.0,3.0,5.0])
+		except:
+			create_fail = True
+		self.assertTrue( create_fail )
 
 
 class TestGrid3D(unittest.TestCase):
@@ -121,10 +141,32 @@ class TestGrid3D(unittest.TestCase):
 		gslice = self.g[1.0:-1.0,1.0:-1.0,1.0:-1.0]
 		self.assertTrue( gslice.match(aslice) )
 	
-	def test_edges(self):
-		#self.g.shape = (5,5,5)
+	def test_default_edges(self):
 		edges = [[i-.5 for i in range(e+1)] for e in self.g.shape]
-		self.assertTrue( self.g.edges == edges )
+		self.assertTrue( self.g.get_edges() == edges )
+	
+	def test_manual_edges(self):
+		man_edges = [range(6),range(6,0,-1),range(0,-6,-1)]
+		man_g = Grid(np.array(self.three_d), edges=man_edges)
+		self.assertTrue( man_g.get_edges() == man_edges )
+	
+	def test_wrong_size_edges(self):
+		create_fail = False
+		man_edges = [range(6),range(7,0,-1),range(0,-6,-1)]
+		try:
+			man_g = Grid(np.array(self.three_d), edges=man_edges)
+		except:
+			create_fail = True
+		self.assertTrue( create_fail )
+	
+	def test_wrong_dim_edges(self):
+		create_fail = False
+		man_edges = [range(6),range(6,0,-1),range(0,-6,-1),range(6)]
+		try:
+			man_g = Grid(np.array(self.three_d), edges=man_edges)
+		except:
+			create_fail = True
+		self.assertTrue( create_fail )
 
 if __name__ == '__main__':
 	unittest.main()
