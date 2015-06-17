@@ -7,10 +7,14 @@ class Grid(np.ndarray):
 		x.set_edges(edges)
 		return x
 	
+	# used for test suite. compares every value in self with a ndarray
 	def match(self, arr):
 		if (self.shape != arr.shape): return False
 		return (self == arr).all()
 	
+	# intercepts ndarray.__getitem__(), floats use grid edges, ints passed through
+	# returned grid has sliced edges.
+	# NOTE: grid float slice will include last element. int slice will not.
 	def __getitem__(self, arg):
 		if type(arg) is not tuple:
 			arg = [arg]
@@ -42,15 +46,12 @@ class Grid(np.ndarray):
 		x.set_edges(edge_set)
 		return x
 	
-	#def __grid_slice__(self, i, j):
-	#	x = super(Grid, self).__getslice__(i, j)
-	#	return x
-	
 	# return index position for edge set of given dimension
 	def __grid_lookup__(self, dim, val):
 		edge = self._edges[dim]
 		reverse = self._edge_reverse[dim]
 		
+		# if position is an int, use standard lookup over grid lookup
 		if type(val) == int:
 			if val < 0:
 				return (len(edge)-1) + val
@@ -58,7 +59,7 @@ class Grid(np.ndarray):
 			
 		if val < edge[0] or val > edge[-1]:
 			# val not in grid
-			pass
+			raise ValueError(str(val) + " outside of edge set")
 		index_out = bisect(edge, val)
 		if reverse:
 			index_out = (len(edge)-1) - index_out
@@ -70,6 +71,17 @@ class Grid(np.ndarray):
 	def __default_edges__(self):
 		self._edges = [ [ i - 0.5 for i in range(dsize+1) ] for dsize in self.shape ]
 		self._edge_reverse = [ False for i in range(self.ndim) ]
+		return None
+	
+	def __insert_edges__(self, edges):
+		self._edges = [ [i for i in e] for e in edges ]
+		self._edge_reverse = []
+		for edge_set in self._edges:
+			if edge_set[0] > edge_set[1]:
+				edge_set.reverse()
+				self._edge_reverse.append(True)
+			else:
+				self._edge_reverse.append(False)
 		return None
 	
 	# tests that edge set is valid for the grid (monotonic & correct size)
@@ -94,28 +106,16 @@ class Grid(np.ndarray):
 	def set_edges(self, edges=None):
 		if edges == None:
 			self.__default_edges__()
-		
 		elif self.validate_edges(edges):
-			self._edges = [ [i for i in e] for e in edges ]
-			self._edge_reverse = []
-			for edge_set in self._edges:
-				if edge_set[0] > edge_set[1]:
-					edge_set.reverse()
-					self._edge_reverse.append(True)
-				else:
-					self._edge_reverse.append(False)
-					
+			self.__insert_edges__(edges)
+		# lets 1d grids define edges with one list ([...] instead of [[...]])		
 		elif self.validate_edges([edges]):
-			self._edges = [[ i for i in edges ]]
-			if edges[0] > edges[1]:
-				self._edges[0].reverse()
-				self._edge_reverse = [True]
-			else:
-				self._edge_reverse = [False]
-				
+			self.__insert_edges__([edges])
 		else:
 			raise ValueError("invalid edge set")
-		
+		return None
+	
+	# returns the edge set for the grid
 	def get_edges(self):
 		out_edges = [ [i for i in e] for e in self._edges ]
 		for i in range(len(out_edges)):
