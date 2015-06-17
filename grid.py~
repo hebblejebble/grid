@@ -11,25 +11,60 @@ class Grid(np.ndarray):
 		if (self.shape != arr.shape): return False
 		return (self == arr).all()
 	
-	def __getitem__(self, i):
-		x = super(Grid, self).__getitem__(i)
+	def __getitem__(self, obj):
+		arg = obj
+		if type(arg) is not tuple:
+			arg = [arg]
+		else:
+			arg = list(arg)
+		edge_set = self.get_edges()
+		for i in range(len(arg)):
+			if type(arg[i]) is slice:
+				start = self.__grid_lookup__(i, arg[i].start)
+				stop  = self.__grid_lookup__(i, arg[i].stop)
+				if type(arg[i].stop) is not int:
+					stop += 1
+				arg[i] = slice(start, stop, None)
+				edge_set[i] = edge_set[i][start:(stop+1)]
+			else:
+				arg[i] = self.__grid_lookup__(i, arg[i])
+				edge_set[i] = None
+		while None in edge_set:
+			edge_set.remove(None)
+		x = super(Grid, self).__getitem__( tuple(arg) )
+		if type(x) == Grid:
+			x.set_edges(edge_set)
 		return x
 	
 	# getslice is only called in 1D, integer slices (otherwise tricky getitem call used)
 	def __getslice__(self, i, j):
 		x = super(Grid, self).__getslice__(i, j)
+		edge_set = [ e[i:(j+1)] for e in self.get_edges() ]
+		x.set_edges(edge_set)
 		return x
+	
+	#def __grid_slice__(self, i, j):
+	#	x = super(Grid, self).__getslice__(i, j)
+	#	return x
 	
 	# return index position for edge set of given dimension
 	def __grid_lookup__(self, dim, val):
 		edge = self._edges[dim]
 		reverse = self._edge_reverse[dim]
+		
+		if type(val) == int:
+			if val < 0:
+				return (len(edge)-1) + val
+			return val
+			
 		if val < edge[0] or val > edge[-1]:
 			# val not in grid
 			pass
-		index_out = bisect(self._edges[dim],val) - 1
+		index_out = bisect(edge, val)
 		if reverse:
-			index_out = len(edge) - index_out
+			index_out = (len(edge)-1) - index_out
+		else:
+			index_out -= 1
 		return index_out
 	
 	# returns the default set of edges for the grid 
