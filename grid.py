@@ -3,9 +3,30 @@ from bisect import bisect
 
 class Grid(np.ndarray):
 	def __new__(cls, arr, edges=None):
+		try:
+			null = [e for e in arr]
+		except:
+			arr = Grid.__scalar_arr__(arr, edges)
 		x = np.asarray(arr).view(cls)
 		x.set_edges(edges)
 		return x
+	
+	# initalize with every cell holding provided value
+	@classmethod
+	def __scalar_arr__(cls, val, edges):
+		try:
+			null = [ [i for i in e] for e in edges]
+		except:
+			try:
+				null = [e for e in edges]
+				edges = [edges]
+			except:
+				raise ValueError("Not a valid edge set")
+		#usable edge set
+		shape = [ len(e)-1 for e in edges ]
+		arr = np.zeros(shape)
+		arr.fill(val)
+		return arr
 	
 	# used for test suite. compares every value in self with a ndarray
 	def match(self, arr):
@@ -23,6 +44,8 @@ class Grid(np.ndarray):
 		edge_set = self.get_edges()
 		for i in range(len(arg)):
 			if type(arg[i]) is slice:
+				if type(arg[i].start) is not int or type(arg[i].stop) is not int:
+					arg[i] = slice(float(arg[i].start),float(arg[i].stop),None)
 				start = self.__grid_lookup__(i, arg[i].start)
 				stop  = self.__grid_lookup__(i, arg[i].stop)
 				if type(arg[i].stop) is not int:
@@ -57,9 +80,9 @@ class Grid(np.ndarray):
 				return (len(edge)-1) + val
 			return val
 			
-		if val < edge[0] or val > edge[-1]:
+		if val < edge[0] or val >= edge[-1]:
 			# val not in grid
-			raise ValueError(str(val) + " outside of edge set")
+			raise IndexError("position outside of edge set")
 		index_out = bisect(edge, val)
 		if reverse:
 			index_out = (len(edge)-1) - index_out

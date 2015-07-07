@@ -44,13 +44,13 @@ class TestGrid1D(unittest.TestCase):
 		aslice = self.one_d[1:-1]
 		gslice = self.g[1:-1]
 		self.assertTrue( gslice.match(aslice) )
-		self.assertTrue( gslice.get_edges() == [range(-4,5,1)] )
+		self.assertTrue( gslice.get_edges() == [list(range(-4,5,1))] )
 	
 	def test_getslice_float_1d(self):
 		aslice = self.one_d[4:8]
 		gslice = self.g[-0.5:2.5]
 		self.assertTrue( gslice.match(aslice) )
-		self.assertTrue( gslice.get_edges() == [range(-1,4,1)] )
+		self.assertTrue( gslice.get_edges() == [list(range(-1,4,1))] )
 	
 	def test_default_edges_1d(self):
 		edges = [[i-.5 for i in range( len(self.g)+1)]]
@@ -76,11 +76,18 @@ class TestGrid1D(unittest.TestCase):
 		except:
 			create_fail = True
 		self.assertTrue( create_fail )
+	
+	def test_scalar_init_1d(self):
+		scalar_grid = Grid(3, edges=range(5+1))
+		scalar_arr = np.zeros((5))
+		scalar_arr.fill(3)
+		self.assertTrue( scalar_grid.match(scalar_arr) )
 
 
 class TestGrid3D(unittest.TestCase):
 	def setUp(self):
 		edge_set = [range(-6,0,1),range(3,-3,-1),range(2,8,1)]
+		edge_set = [ list(e) for e in edge_set ]
 		self.three_d = np.array( range(125) ).reshape(5,5,5)
 		self.g = Grid( self.three_d.copy(), edges=edge_set )
 	
@@ -125,6 +132,7 @@ class TestGrid3D(unittest.TestCase):
 	
 	def test_getslice_neg_int_3d(self):
 		edge_set = [range(-5,-1,1),range(2,-2,-1),range(3,7,1)]
+		edge_set = [ list(e) for e in edge_set ]
 		aslice = self.three_d[1:-1,1:-1,1:-1]
 		gslice = self.g[1:-1,1:-1,1:-1]
 		self.assertTrue( gslice.match(aslice) )
@@ -132,6 +140,7 @@ class TestGrid3D(unittest.TestCase):
 	
 	def test_getslice_float_3d(self):
 		edge_set = [range(-6,-2,1),range(3,-1,-1),range(2,6,1)]
+		edge_set = [ list(e) for e in edge_set ]
 		aslice = self.three_d[0:3,0:3,0:3]
 		gslice = self.g[-5.5:-3.5,2.5:0.5,2.5:4.5]
 		self.assertTrue( gslice.match(aslice) )
@@ -139,8 +148,17 @@ class TestGrid3D(unittest.TestCase):
 	
 	def test_getslice_mixed_3d(self):
 		edge_set = [range(-5,-2,1),range(2,-1,-1),range(4,7,1)]
+		edge_set = [ list(e) for e in edge_set ]
 		aslice = self.three_d[1:3,1:3,-3:-1]
 		gslice = self.g[1:3,1.5:0.5,-3:-1]
+		self.assertTrue( gslice.match(aslice) )
+		self.assertTrue( gslice.get_edges() == edge_set )
+	
+	def test_getslice_partial_float_3d(self):
+		edge_set = [range(-5,-2,1),range(3,-1,-1),range(2,6,1)]
+		edge_set = [ list(e) for e in edge_set ]
+		aslice = self.three_d[1:3,0:3,0:3]
+		gslice = self.g[-5:-3.5,2.5:0.1,2.1:4.5]
 		self.assertTrue( gslice.match(aslice) )
 		self.assertTrue( gslice.get_edges() == edge_set )
 	
@@ -155,6 +173,7 @@ class TestGrid3D(unittest.TestCase):
 	
 	def test_manual_edges_3d(self):
 		man_edges = [range(6),range(6,0,-1),range(0,-6,-1)]
+		man_edges = [ list(e) for e in man_edges ]
 		man_g = Grid(np.array(self.three_d), edges=man_edges)
 		self.assertTrue( man_g.get_edges() == man_edges )
 	
@@ -175,6 +194,12 @@ class TestGrid3D(unittest.TestCase):
 		except:
 			create_fail = True
 		self.assertTrue( create_fail )
+	
+	def test_scalar_init_3d(self):
+		scalar_grid = Grid(3, edges=[range(5+1), range(5+1), range(5+1)])
+		scalar_arr = np.zeros((5,5,5))
+		scalar_arr.fill(3)
+		self.assertTrue( scalar_grid.match(scalar_arr) )
 
 if __name__ == '__main__':
 	unittest.main()
